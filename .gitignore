@@ -1,0 +1,6 @@
+main
+test_main
+source/.obj/*.o
+source/.obj/deps/*.d
+source/test/.obj/*.o
+source/test/.obj/deps/*.d
