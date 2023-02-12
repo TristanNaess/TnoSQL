@@ -61,10 +61,11 @@ enum class Memory {Structured, Parsed, Temporary};
 class Document
 {
     public:
-        Document(Memory mode, std::string data);
+        Document(Memory mode, const std::string& data);
 
     private:
         std::variant<std::string, std::unordered_map<std::string, Data>> m_data;
+        Memory m_mode;
 };
 
 #endif//__DOCUMENT_HPP__
