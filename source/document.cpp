@@ -1,4 +1,6 @@
 #include "document.hpp"
+#include "util.hpp"
+#include <stdexcept>
 
 Document::Document(Memory mode, const std::string& data)
 {

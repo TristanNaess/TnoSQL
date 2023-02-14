@@ -5,7 +5,27 @@
 
 namespace util
 {
+    // construct in memory structure
     std::unordered_map<std::string, Data> build_structure(const std::string& data);
+
+    // all extract_*_*() rely on verified strings
+
+    // extract types from object or array string
+    std::string_view extract_object_string(std::string_view line);
+    std::string_view extract_array_string(std::string_view line);
+    
+    // pull field from object string matching key
+    std::string_view extract_object_field(std::string_view line, std::string_view key);
+
+    // pull nth element from array string
+    std::string_view extract_array_field(std::string_view line, size_t index);
+
+    // verify as-string object or array is valid
+    bool verify_object(std::string_view line);
+    bool verify_array(std::string_view line);
+
+    // verify as-string json is valid
+    bool verify_json(std::string_view line);
 }
 
 #endif//__UTIL_HPP__
