@@ -2,6 +2,7 @@
 #define __UTIL_HPP__
 
 #include "document.hpp"
+#include <optional>
 
 namespace util
 {
@@ -20,9 +21,13 @@ namespace util
     // pull nth element from array string
     std::string_view extract_array_field(std::string_view line, size_t index);
 
-    // verify as-string object or array is valid
-    bool verify_object(std::string_view line);
-    bool verify_array(std::string_view line);
+    // verify validity of type strings; return none option on success or string on error
+    std::optional<std::string> verify_object(std::string_view line);
+    std::optional<std::string> verify_array(std::string_view line);
+    std::optional<std::string> verify_string(std::string_view line);
+    std::optional<std::string> verify_number(std::string_view line);
+    std::optional<std::string> verify_bool(std::string_view line);
+    std::optional<std::string> verify_null(std::string_view line);
 
     // verify as-string json is valid
     bool verify_json(std::string_view line);
