@@ -49,6 +49,16 @@ TEST(VerifyString, GoodString)
     EXPECT_FALSE(util::verify_string(R"("This \"string\" contains escaped quotes")")) << R"(util::verify_string() returned an error for argument "This \"string\" contains escaped quotes")";
     // String containing escaped characters
     EXPECT_FALSE(util::verify_string(R"("\\\/\b\f\n\r\t\ua13d")")) << R"(util::verify_string() returned an error for argument "\\\/\b\f\n\r\t\ua13d")";
+    // String containing non-ascii unicode
+    EXPECT_FALSE(util::verify_string(R"("∮ E⋅da = Q,  n → ∞, ∑ f(i) = ∏ g(i), ∀x∈ℝ: ⌈x⌉ = −⌊−x⌋, α ∧ ¬β = ¬(¬α ∨ β),
+
+  ℕ ⊆ ℕ₀ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ, ⊥ < a ≠ b ≡ c ≤ d ≪ ⊤ ⇒ (A ⇔ B),
+
+  2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ, ⌀ 200 mm")") << R"(util::verify_string() returned an error for argument "∮ E⋅da = Q,  n → ∞, ∑ f(i) = ∏ g(i), ∀x∈ℝ: ⌈x⌉ = −⌊−x⌋, α ∧ ¬β = ¬(¬α ∨ β),
+
+  ℕ ⊆ ℕ₀ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ, ⊥ < a ≠ b ≡ c ≤ d ≪ ⊤ ⇒ (A ⇔ B),
+
+  2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ, ⌀ 200 mm")";
 }
 
 TEST(VerifyString, BadString)
