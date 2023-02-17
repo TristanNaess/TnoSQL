@@ -1,6 +1,6 @@
 #include "util.hpp"
 #include <iostream>
-#include <stdexecept> // replace with custom error header later
+#include <stdexcept> // replace with custom error header later
 
 // TODO: replace mixed throws and optionals with consistant optionals or errors, check runtime difference
 
@@ -42,10 +42,10 @@ namespace util
         if (line[quote] != '"')
         {
             // same here, replace later
-            throw std::runtime_erro("util::match_quote() called with index != '\"'");
+            throw std::runtime_error("util::match_quote() called with index != '\"'");
         }
 
-        for (const auto itr = line.begin() + quote + 1; itr != line.end(); itr++)
+        for (auto itr = line.begin() + quote + 1; itr != line.end(); itr++)
         {
             if (*itr == '"' && *(itr - 1) != '\\') return itr - line.begin();
         }
@@ -80,11 +80,11 @@ namespace util
         }
 
         size_t depth = 1;
-        for (const auto itr = line.begin() + opening_index; itr < line.end(); itr++)
+        for (auto itr = line.begin() + opening_index; itr < line.end(); itr++)
         {
             if (*itr == open_char && *(itr - 1) != '\\') depth++;
-            if (*itr == close_char && *(itr - 1) !+ '\\') depth--;
-            if (depth == 0) return *itr - line.begin();
+            if (*itr == close_char && *(itr - 1) != '\\') depth--;
+            if (depth == 0) return itr - line.begin();
         }
 
         throw std::runtime_error("No matching bracket");
@@ -124,7 +124,8 @@ namespace util
         if (line.back() != '}') return "Object string missing closing bracket";
         
         // strip surrounding braces and white space
-        line.remove_prefix(1).remove_suffix(1);
+        line.remove_prefix(1);
+        line.remove_suffix(1);
         line = chomp(line);
  
         // break into fields
@@ -158,7 +159,7 @@ namespace util
 
             std::string_view key, val;
             size_t delim;
-            delim = match_quote(f);
+            delim = match_quote(f, 0);
             delim = f.find(':', delim);
             key = remove_trailing_ws(f.substr(0, delim));
             if (key.size() == 0) return "Key has zero length";
@@ -187,7 +188,7 @@ namespace util
                     break;
                 case 'n':
                 case 'N':
-                    result = verfify_null(val);
+                    result = verify_null(val);
                     break;
                 default:
                     result = verify_number(val);
@@ -200,24 +201,24 @@ namespace util
 
     std::optional<std::string> verify_array(std::string_view line)
     {
-        return "TODO: implement util::verify_array()";
+        throw std::runtime_error("TODO: implement util::verify_array();");
     }
 
     std::optional<std::string> verify_string(std::string_view line)
     {
-        return "TODO: implement util::verify_string()";
+        throw std::runtime_error("TODO: implement util::verify_string()");
     }
     std::optional<std::string> verify_number(std::string_view line)
     {
-        return "TODO: implement util::verify_number()";
+        throw std::runtime_error("TODO: implement util::verify_number()");
     }
     std::optional<std::string> verify_bool(std::string_view line)
     {
-        return "TODO: implement util::verify_bool()";
+        throw std::runtime_error("TODO: implement util::verify_bool()");
     }
     std::optional<std::string> verify_null(std::string_view line)
     {
-        return "TODO: implement util::verify_null()";
+        throw std::runtime_error("TODO: implement util::verify_null()");
     }
 
     std::optional<std::string> verify_json(std::string_view line)

@@ -30,7 +30,7 @@ namespace util
     std::optional<std::string> verify_null(std::string_view line);
 
     // verify as-string json is valid
-    bool verify_json(std::string_view line);
+    std::optional<std::string> verify_json(std::string_view line);
 }
 
 #endif//__UTIL_HPP__
