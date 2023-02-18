@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "util.hpp"
+#include <optional>
 
 // Verify Null
 TEST(VerifyNull, GoodNull)
@@ -10,7 +11,9 @@ TEST(VerifyNull, GoodNull)
 
 TEST(VerifyNull, StartsWithNButNotNull)
 {
-    EXPECT_TRUE(util::verify_null("Nill")) << "util::verify_null() did not return an error when one was expected";
+    std::optional<std::string> result = util::verify_null("Nill");
+    EXPECT_TRUE(result) << "util::verify_null() did not return an error for argument \"Nill\"";
+    EXPECT_EQUAL(result.value(), "argument does not match [Nn]ull") << "returned error did not match expected";
 }
 
 // Verify bool
@@ -22,9 +25,14 @@ TEST(VerifyBool, GoodBool)
     EXPECT_FALSE(util::verify_bool("false")) << "util::verify_bool() returned an error for argument \"false\"";
 }
 
-TEST(VerifyBool, StartsWithBButNotNull)
+TEST(VerifyBool, StartsWithTorFButNotBool)
 {
-    EXPECT_TRUE(util::verify_bool("Three")) << "util::verify_bool() did not return an error when one was expected";
+    std::optional<std::stirng> result = util::verify_bool("Three");
+    EXPECT_TRUE(result) << "util::verify_bool() did not return an error for argument \"Three\"";
+    EXPECT_EQUAL(result.value(), "Argument does not match [Tt]rue or [Ff]alse") << "returned error did not match expected";
+    result = util::verify_bool("Four");
+    EXPECT_TRUE(result) << "util::verify_bool() did not return an error for argument \"Four\"";
+    EXPECT_EQUAL(result.value(), "Argument does not match [Tt]rue or [Ff]alse") << "returned error did not match expected";
 }
 
 // Verify Number
@@ -37,7 +45,9 @@ TEST(VerifyNumber, GoodNumber)
 
 TEST(VerifyNumber, NotANumber)
 {
-    EXPECT_TRUE(util::verify_bool("Foobar")) << "util::verify_number() did not return an error for argument \"Foobar\"";
+    std::optional<std::string> result = util::verify_number("Foobar");
+    EXPECT_TRUE(result) << "util::verify_number() did not return an error for argument \"Foobar\"";
+    EXPECT_EQUAL(result.value(), "Argument could not be parsed as a number") << "returned error did not match expected";
 }
 
 // Verify String
@@ -54,7 +64,7 @@ TEST(VerifyString, GoodString)
 
   ℕ ⊆ ℕ₀ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ, ⊥ < a ≠ b ≡ c ≤ d ≪ ⊤ ⇒ (A ⇔ B),
 
-  2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ, ⌀ 200 mm")") << R"(util::verify_string() returned an error for argument "∮ E⋅da = Q,  n → ∞, ∑ f(i) = ∏ g(i), ∀x∈ℝ: ⌈x⌉ = −⌊−x⌋, α ∧ ¬β = ¬(¬α ∨ β),
+  2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ, ⌀ 200 mm")")) << R"(util::verify_string() returned an error for argument "∮ E⋅da = Q,  n → ∞, ∑ f(i) = ∏ g(i), ∀x∈ℝ: ⌈x⌉ = −⌊−x⌋, α ∧ ¬β = ¬(¬α ∨ β),
 
   ℕ ⊆ ℕ₀ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ, ⊥ < a ≠ b ≡ c ≤ d ≪ ⊤ ⇒ (A ⇔ B),
 
@@ -63,14 +73,26 @@ TEST(VerifyString, GoodString)
 
 TEST(VerifyString, BadString)
 {
+    // Fully empty string
+    std::optional<std::string> result = util::verify_string("");
+    EXPECT_TRUE(result) << "util::verify_string() did not return an error for an empty string argument";
+    EXPECT_EQUAL(result.value(), "String is less than empty")
     // Missing Initial Quote
-    EXPECT_TRUE(util::verify_string(R"(This string is missing the initial quote")")) << R"(util::verify_string() did not return an error for argument This string is missing the initial quote")";
+    result = util::verify_string(R"(This string is missing the initial quote")");
+    EXPECT_TRUE(result) << R"(util::verify_string() did not return an error for argument This string is missing the initial quote")";
+    EXPECT_EQUAL(result.value(), "String is missing initial quote") << "returned error did not match expected";
     // Missing Final Quote
-    EXPECT_TRUE(util::verify_string(R"("This string is missing the final quote)")) << R"(util::verify_string() did not return an error for argument "This string is missing the final quote)";
+    result = util::verify_string(R"("This string is missing the final quote)");
+    EXPECT_TRUE(result) << R"(util::verify_string() did not return an error for argument "This string is missing the final quote)";
+    EXPECT_EQUAL(result.value(), "String missing final quote") << "returned error did not match expected";
     // Bad Escape Character
-    EXPECT_TRUE(util::verify_string(R"("\q")")) << R"(util::verify_string() did not return an error for argument "\q")";
+    result = util::verify_string(R"("\q")");
+    EXPECT_TRUE(result) << R"(util::verify_string() did not return an error for argument "\q")";
+    EXPECT_EQUAL(result.value(), "Non escape character after '\\'") << "returned error did not match expected";
     // Bad Unicode character
-    EXPECT_TRUE(util::verify_string(R"(\u11g4)")) << R"(util::verify_string() did not return an error for argument "\u11g4")";
+    result = util::verify_string(R"(\u11g4)");
+    EXPECT_TRUE(result) << R"(util::verify_string() did not return an error for argument "\u11g4")";
+    EXPECT_EQUAL(result.value(), "Non hex character in \\uXXXX escape sequence") << "returned error did not match expected";
 }
 
 // Verify Array
@@ -87,13 +109,21 @@ TEST(VerifyArray, GoodArray)
 TEST(VerifyArray, BadArray)
 {
     // Missing Initial Bracket
-    EXPECT_TRUE(util::verify_array("\"This\", \"array\", \"is\", \"missing\", \"the\", \"inital\", \"brace\"]")) << "util::verify_array() did not return an error for argument \"This\", \"array\", \"is\", \"missing\", \"the\", \"inital\", \"brace\"]";
+    std::optional<std::string> result = util::verify_array("\"This\", \"array\", \"is\", \"missing\", \"the\", \"inital\", \"brace\"]");
+    EXPECT_TRUE(result) << "util::verify_array() did not return an error for argument \"This\", \"array\", \"is\", \"missing\", \"the\", \"inital\", \"brace\"]";
+    EXPECT_EQUAL(result.value(), "Array string is missing opening bracket") << "returned error did not match expected";
     // Missing Final Bracket
-    EXPECT_TRUE(util::verify_array("\"This\", \"array\", \"is\", \"missing\", \"the\", \"final\", \"brace\"]")) << "util::verify_array() did not return an error for argument \"This\", \"array\", \"is\", \"missing\", \"the\", \"final\", \"brace\"]";
+    result = util::verify_array("\"This\", \"array\", \"is\", \"missing\", \"the\", \"final\", \"brace\"]");
+    EXPECT_TRUE(result) << "util::verify_array() did not return an error for argument \"This\", \"array\", \"is\", \"missing\", \"the\", \"final\", \"brace\"]";
+    EXPECT_EQUAL(result.value(), "Array string is missing closing bracket") << "Returned error did not match expected";
     // Missing Comma
-    EXPECT_TRUE(util::verify_array("[1, 2, 3, 4 5, 6, 7]")) << "util::verify_array() did not return an error for argument [1, 2, 3, 4 5, 6, 7]";
+    result = util::verify_array("[1, 2, 3, 4 5, 6, 7]");
+    EXPECT_TRUE(result) << "util::verify_array() did not return an error for argument [1, 2, 3, 4 5, 6, 7]";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Field
-    EXPECT_TRUE(util::verify_array("[1, 2, 3, , 5, 6]")) << "util::verify_array() did not return an error for argument [1, 2, 3, , 5, 6]";
+    result = util::verify_array("[1, 2, 3, , 5, 6]");
+    EXPECT_TRUE(result) << "util::verify_array() did not return an error for argument [1, 2, 3, , 5, 6]";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
 }
 
 // Verify Object
@@ -110,17 +140,31 @@ TEST(VerifyObject, GoodObject)
 TEST(VerifyObject, BadObject)
 {
     // Missing Initial Brace
-    EXPECT_TRUE(util::verify_object(R"("Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})")) << R"(util::verify_object() did not return an error for argument "Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})";
+    std::optional<std::string> result = util::verify_object(R"("Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument "Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected"; 
     // Missing Final Brace
-    EXPECT_TRUE(util::verify_object(R"({"Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3")")) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3")";
+    result = util::verify_object(R"({"Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3")");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2", "Key 3": "Object 3")";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Key
-    EXPECT_TRUE(util::verify_object(R"("Key 1": "Object 1", "Key 2": "Object 2", : "Object 3")")) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2", : "Object 3"})";
+    result = util::verify_object(R"("Key 1": "Object 1", "Key 2": "Object 2", : "Object 3")");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2", : "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Value
-    EXPECT_TRUE(util::verify_object(R"({"Key 1": "Object 1", "Key 2": , "Key 3": "Object 3"})")) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": , "Key 3": "Object 3"})";
+    result = util::verify_object(R"({"Key 1": "Object 1", "Key 2": , "Key 3": "Object 3"})");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": , "Key 3": "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Field
-    EXPECT_TRUE(util::verify_object(R"({"Key 1": "Object 1",, "Key 3": "Object 3"})")) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1",, "Key 3": "Object 3"})";
+    result = util::verify_object(R"({"Key 1": "Object 1",, "Key 3": "Object 3"})");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1",, "Key 3": "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Colon
-    EXPECT_TRUE(util::verify_object(R"({"Key 1" "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})")) << R"(util::verify_object() did not return an error for argument {"Key 1" "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})";
+    result = util::verify_object(R"({"Key 1" "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1" "Object 1", "Key 2": "Object 2", "Key 3": "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
     // Missing Comma
-    EXPECT_TRUE(util::verify_object(R"({"Key 1": "Object 1", "Key 2": "Object 2" "Key 3": "Object 3"})")) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2" "Key 3": "Object 3"})";
+    result = util::verify_object(R"({"Key 1": "Object 1", "Key 2": "Object 2" "Key 3": "Object 3"})");
+    EXPECT_TRUE(result) << R"(util::verify_object() did not return an error for argument {"Key 1": "Object 1", "Key 2": "Object 2" "Key 3": "Object 3"})";
+    EXPECT_EQUAL(result.value(), "I don't know what error to expect yet") << "Returned error did not match expected";
 }

@@ -25,6 +25,12 @@ namespace util
     }
     
     // local to .cpp file
+    inline bool is_hex(char c)
+    {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+    }
+
+    // local to .cpp file
     std::string_view chomp(std::string_view line) // may return empty string_view
     {
         return remove_trailing_ws(remove_leading_ws(line));
@@ -206,19 +212,67 @@ namespace util
 
     std::optional<std::string> verify_string(std::string_view line)
     {
-        throw std::runtime_error("TODO: implement util::verify_string()");
+        if (line.size() == 0) return "String is less than empty";
+        if (line.front() != '"') return "String missing initial quote";
+        if (line.back() != '"') return "String missing final quote";
+
+        line.remove_prefix(1);
+        line.remove_suffix(1);
+
+        for (size_t i = 0; i < line.size(); i++)
+        {
+            if (line[i] == '\\')
+            {
+                i++;
+                switch (line[i])
+                {
+                    case '\\':
+                    case '/':
+                    case '"':
+                    case 'b':
+                    case 'f':
+                    case 'n':
+                    case 'r':
+                    case 't':
+                        break;
+                    case 'u':
+                        i++;
+                        if (!is_hex(line[i])) return "Non hex character in \\uXXXX escape sequence";
+                        i++;
+                        if (!is_hex(line[i])) return "Non hex character in \\uXXXX escape sequence";
+                        i++;
+                        if (!is_hex(line[i])) return "Non hex character in \\uXXXX escape sequence";
+                        i++;
+                        if (!is_hex(line[i])) return "Non hex character in \\uXXXX escape sequence";
+                        break;
+                    default:
+                        return "Non escape character after '\\'";
+                }
+            }
+        }
+        return {};
     }
     std::optional<std::string> verify_number(std::string_view line)
     {
-        throw std::runtime_error("TODO: implement util::verify_number()");
+        try
+        {
+            std::stod(std::string(line));
+        }
+        catch(...)
+        {
+            return "Argument could not be parsed as a number";
+        }
+        return {};
     }
     std::optional<std::string> verify_bool(std::string_view line)
     {
-        throw std::runtime_error("TODO: implement util::verify_bool()");
+        if (line == "true" || line == "false" || line == "True" || line == "False") return {};
+        return "Argument does not match [Tt]rue or [Ff]alse";
     }
     std::optional<std::string> verify_null(std::string_view line)
     {
-        throw std::runtime_error("TODO: implement util::verify_null()");
+        if (line == "null" || line == "Null") return {};
+        return "Argument does not match [Nn]ull";
     }
 
     std::optional<std::string> verify_json(std::string_view line)
