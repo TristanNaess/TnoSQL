@@ -85,7 +85,7 @@ namespace util
                 throw std::runtime_error("util::match_bracket() called with index != [ or {");
         }
 
-        size_t depth = 1;
+        size_t depth = 0; // can't start at one, because the first char is the bracket to be matched
         for (auto itr = line.begin() + opening_index; itr < line.end(); itr++)
         {
             if (*itr == open_char && *(itr - 1) != '\\') depth++;
@@ -126,8 +126,8 @@ namespace util
     std::optional<std::string> verify_object(std::string_view line)
     {
         if (line.size() == 0) return "Object string has zero length";
-        if (line.front() != '{') return "Object string missing opening bracket";
-        if (line.back() != '}') return "Object string missing closing bracket";
+        if (line.front() != '{') return "Object string missing opening brace";
+        if (line.back() != '}') return "Object string missing closing brace";
         
         // strip surrounding braces and white space
         line.remove_prefix(1);
@@ -137,8 +137,13 @@ namespace util
         // break into fields
         std::vector<std::string_view> fields;
         size_t i = 0;
-        while (line.size() > 0)
+        while (line.size())
         {
+            if (i == line.size())
+            {
+                fields.push_back(line);
+                break;
+            }
             switch (line[i])
             {
                 case '[': // skip between brackets
@@ -161,16 +166,17 @@ namespace util
         for (const auto& f : fields)
         {
             if (f.size() == 0) return "Object contains empty field";
+            if (f[0] == ':') return "Field is missing key";
             if (f[0] != '"') return "Key does not start with quote";
 
             std::string_view key, val;
             size_t delim;
             delim = match_quote(f, 0);
             delim = f.find(':', delim);
+            if (delim == std::string_view::npos) return "':' delimiter missing between key and value";
             key = remove_trailing_ws(f.substr(0, delim));
-            if (key.size() == 0) return "Key has zero length";
             val = remove_leading_ws(f.substr(delim + 1));
-            if (val.size() == 0) return "Value has zero length";
+            if (val.size() == 0) return "Field is missing value";
 
             auto result = verify_string(key);
             if (result) return "Error in Key: " + result.value();
@@ -187,8 +193,8 @@ namespace util
                     result = verify_string(val);
                     break;
                 case 't':
-                case 'T':
                 case 'f':
+                case 'T':
                 case 'F':
                     result = verify_bool(val);
                     break;
@@ -207,7 +213,76 @@ namespace util
 
     std::optional<std::string> verify_array(std::string_view line)
     {
-        throw std::runtime_error("TODO: implement util::verify_array();");
+        if (line.size() == 0) return "Array string has zero length";
+        if (line.front() != '[') return "Array string missing opening brace";
+        if (line.back() != ']') return "Array string missing closing brace";
+        
+        // strip surrounding braces and white space
+        line.remove_prefix(1);
+        line.remove_suffix(1);
+        line = chomp(line);
+ 
+        // break into fields
+        std::vector<std::string_view> fields;
+        size_t i = 0;
+        while (line.size())
+        {
+            if (i == line.size())
+            {
+                fields.push_back(line);
+                break;
+            }
+            switch (line[i])
+            {
+                case '[': // skip between brackets
+                case '{':
+                    i = match_bracket(line, i);
+                    break;
+                case '"': // skip string
+                    i = match_quote(line, i);
+                    break;
+                case ',': // consume contents
+                    fields.push_back(remove_trailing_ws(line.substr(0, i)));
+                    line = remove_leading_ws(line.substr(i + 1));
+                    i = 0;
+                    continue; // skip increment
+            }
+            i++;
+        }
+
+        for (const auto& f : fields)
+        {
+            if (f.size() == 0) return "Array contains empty field";
+
+            std::optional<std::string> result;
+            switch (f[0])
+            {
+                case '{':
+                    result = verify_object(f);
+                    break;
+                case '[':
+                    result = verify_array(f);
+                    break;
+                case '"':
+                    result = verify_string(f);
+                    break;
+                case 't':
+                case 'f':
+                case 'T':
+                case 'F':
+                    result = verify_bool(f);
+                    break;
+                case 'n':
+                case 'N':
+                    result = verify_null(f);
+                    break;
+                default:
+                    result = verify_number(f);
+            }
+            if (result) return "Error in field: " + result.value();
+        }
+
+        return {};
     }
 
     std::optional<std::string> verify_string(std::string_view line)
@@ -249,11 +324,14 @@ namespace util
                         return "Non escape character after '\\'";
                 }
             }
+            else if (line[i] == '"') return "Unescaped quote in string";
         }
         return {};
     }
     std::optional<std::string> verify_number(std::string_view line)
     {
+        // verify no missing commas between number field and another
+        if (line.find_first_of(WS_CHARS) != std::string_view::npos) return "Whitespace in number field, possibly missing field delimiter";
         try
         {
             std::stod(std::string(line));
